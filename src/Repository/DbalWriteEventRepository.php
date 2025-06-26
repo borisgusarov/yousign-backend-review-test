@@ -3,27 +3,83 @@
 namespace App\Repository;
 
 use App\Dto\EventInput;
-use App\Dto\SearchInput;
-use Doctrine\DBAL\Connection;
-use phpDocumentor\Reflection\DocBlock\Tags\Author;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\Event;
+
 
 class DbalWriteEventRepository implements WriteEventRepository
 {
-    private Connection $connection;
+    private EntityManagerInterface $entityManager;
 
-    public function __construct(Connection $connection)
+    public function __construct(EntityManagerInterface $entityManager)
     {
-        $this->connection = $connection;
+        $this->entityManager = $entityManager;
     }
 
     public function update(EventInput $eventInput, int $id): void
     {
-        $sql = <<<SQL
-        UPDATE event
-        SET comment = :comment
-        WHERE id = :id
-SQL;
+        $event = $this->entityManager->getRepository(Event::class)->find($id);
+        if (!$event) {
+            throw new \RuntimeException("Event with ID $id not found.");
+        }
+        $event->setComment($eventInput->comment);
+        $this->entityManager->flush();
+    }
 
-        $this->connection->executeQuery($sql, ['id' => $id, 'comment' => $eventInput->comment]);
+    public function createOne(Event $event): void
+    {
+        if ($event) {
+            $this->entityManager->persist($event);
+            $this->entityManager->flush();
+        }
+    }
+
+    /**
+     * Persists and flushes multiple Event entities in batches for efficiency.
+     * 
+     * @param Event[] $events
+     */
+    public function createMany(array $events): void
+    {
+        $batchSize = 100;
+        $i = 0;
+        foreach ($events as $event) {
+            $this->entityManager->persist($event);
+            $i++;
+            if ($i % $batchSize === 0) {
+                $this->entityManager->flush();
+                $this->entityManager->clear(Event::class);
+            }
+        }
+        if ($i > 0) {
+            $this->entityManager->flush();
+            $this->entityManager->clear(Event::class);
+        }
+    }
+
+    /**
+     * Inserts new events if they don't exist (by unique constraint, e.g.,
+     * id or another unique field), otherwise ignores.
+     * 
+     * @param Event[] $events
+     */
+    public function upsertMany(array $events): void
+    {
+        $batchSize = 100;
+        $i = 0;
+        foreach ($events as $event) {
+            $existing = $this->entityManager->getRepository(Event::class)->find($event->id());
+            if (!$existing) {
+                $this->entityManager->persist($event);
+            }
+            $i++;
+            if ($i % $batchSize === 0) {
+                $this->entityManager->flush();
+                $this->entityManager->clear(Event::class);
+            }
+        }
+
+        $this->entityManager->flush();
+        $this->entityManager->clear(Event::class);
     }
 }

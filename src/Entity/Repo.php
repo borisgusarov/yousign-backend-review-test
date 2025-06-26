@@ -51,6 +51,12 @@ class Repo
         return $this->url;
     }
 
+    /**
+     * Creates a new instance of the Repo entity from an associative array.
+     *
+     * @param array $data Associative array containing 'id', 'name', and 'url' keys.
+     * @return self Returns a new instance of the Repo entity.
+     */
     public static function fromArray(array $data): self
     {
         return new self(
