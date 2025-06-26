@@ -30,43 +30,45 @@ class EventControllerTest extends WebTestCase
         );
     }
 
-    public function testUpdateShouldReturnEmptyResponse()
+    private function sendUpdateRequest($eventId, $payload, $headers = ['CONTENT_TYPE' => 'application/json'])
     {
         $client = static::$client;
-
         $client->request(
             'PUT',
-            sprintf('/api/event/%d/update', EventFixtures::EVENT_1_ID),
+            sprintf('/api/event/%d/update', $eventId),
             [],
             [],
-            ['CONTENT_TYPE' => 'application/json'],
+            $headers,
+            $payload
+        );
+        return $client;
+    }
+
+    public function testUpdateShouldReturnEmptyResponse()
+    {
+        $client = $this->sendUpdateRequest(
+            EventFixtures::EVENT_1_ID,
             json_encode(['comment' => 'It‘s a test comment !!!!!!!!!!!!!!!!!!!!!!!!!!!'])
         );
 
         $this->assertResponseStatusCodeSame(204);
+        // Assert that the response has no content
+        $this->assertEmpty($client->getResponse()->getContent());
     }
 
 
     public function testUpdateShouldReturnHttpNotFoundResponse()
     {
-        $client = static::$client;
-
-        $client->request(
-            'PUT',
-            sprintf('/api/event/%d/update', 7897897897),
-            [],
-            [],
-            ['CONTENT_TYPE' => 'application/json'],
+        $client = $this->sendUpdateRequest(
+            7897897897,
             json_encode(['comment' => 'It‘s a test comment !!!!!!!!!!!!!!!!!!!!!!!!!!!'])
         );
 
         $this->assertResponseStatusCodeSame(404);
 
-        $expectedJson = <<<JSON
-              {
-                "message":"Event identified by 7897897897 not found !"
-              }
-            JSON;
+        $expectedJson = json_encode([
+            "message" => "Event identified by 7897897897 not found !"
+        ]);
 
         self::assertJsonStringEqualsJsonString($expectedJson, $client->getResponse()->getContent());
     }
@@ -76,36 +78,24 @@ class EventControllerTest extends WebTestCase
      */
     public function testUpdateShouldReturnBadRequest(string $payload, string $expectedResponse)
     {
-        $client = static::$client;
-
-        $client->request(
-            'PUT',
-            sprintf('/api/event/%d/update', EventFixtures::EVENT_1_ID),
-            [],
-            [],
-            ['CONTENT_TYPE' => 'application/json'],
+        $client = $this->sendUpdateRequest(
+            EventFixtures::EVENT_1_ID,
             $payload
         );
 
         self::assertResponseStatusCodeSame(400);
         self::assertJsonStringEqualsJsonString($expectedResponse, $client->getResponse()->getContent());
-
     }
 
     public function providePayloadViolations(): iterable
     {
         yield 'comment too short' => [
-            <<<JSON
-              {
-                "comment": "short"
-                
-            }
-            JSON,
-            <<<JSON
-                {
-                    "message": "This value is too short. It should have 20 characters or more."
-                }
-            JSON
+            json_encode([
+                "comment" => "short"
+            ]),
+            json_encode([
+                "message" => "This value is too short. It should have 20 characters or more."
+            ])
         ];
     }
 }

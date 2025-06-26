@@ -16,7 +16,7 @@ class DbalWriteEventRepository implements WriteEventRepository
         $this->connection = $connection;
     }
 
-    public function update(EventInput $authorInput, int $id): void
+    public function update(EventInput $eventInput, int $id): void
     {
         $sql = <<<SQL
         UPDATE event
@@ -24,6 +24,6 @@ class DbalWriteEventRepository implements WriteEventRepository
         WHERE id = :id
 SQL;
 
-        $this->connection->executeQuery($sql, ['id' => $id, 'comment' => $authorInput->comment]);
+        $this->connection->executeQuery($sql, ['id' => $id, 'comment' => $eventInput->comment]);
     }
 }

@@ -29,7 +29,7 @@ class EventController
     }
 
     /**
-     * @Route(path="/api/event/{id}/update", name="api_commit_update", methods={"PUT"})
+     * @Route(path="/api/event/{id}/update", name="api_event_update", methods={"PUT"})
      */
     public function update(Request $request, int $id, ValidatorInterface $validator): Response
     {
@@ -38,13 +38,18 @@ class EventController
         $errors = $validator->validate($eventInput);
 
         if (\count($errors) > 0) {
+            // Return all validation errors
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
             return new JsonResponse(
-                ['message' => $errors->get(0)->getMessage()],
+                ['errors' => $errorMessages],
                 Response::HTTP_BAD_REQUEST
             );
         }
 
-        if($this->readEventRepository->exist($id) === false) {
+        if (!$this->readEventRepository->exist($id)) {
             return new JsonResponse(
                 ['message' => sprintf('Event identified by %d not found !', $id)],
                 Response::HTTP_NOT_FOUND
@@ -53,8 +58,19 @@ class EventController
 
         try {
             $this->writeEventRepository->update($eventInput, $id);
+        } catch (\DomainException $exception) {
+            // Log the exception
+            return new JsonResponse(
+                ['message' => 'Domain error: ' . $exception->getMessage()],
+                Response::HTTP_BAD_REQUEST
+            );
         } catch (\Exception $exception) {
-            return new Response(null, Response::HTTP_SERVICE_UNAVAILABLE);
+            // Log the exception
+            // Return a JSON response with a generic error message
+            return new JsonResponse(
+                ['message' => 'Internal server error'],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
 
         return new Response(null, Response::HTTP_NO_CONTENT);
