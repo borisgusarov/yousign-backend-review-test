@@ -17,11 +17,11 @@ class DbalReadEventRepository implements ReadEventRepository
     public function countAll(SearchInput $searchInput): int
     {
         $sql = <<<SQL
-        SELECT sum(count) as count
-        FROM event
-        WHERE date(created_at) = :date
-        AND payload like :keyword
-SQL;
+            SELECT sum(count) as count
+            FROM event
+            WHERE date(created_at) = :date
+            AND payload like :keyword
+        SQL;
 
         return (int) $this->connection->fetchOne($sql, [
             'date' => $searchInput->date,
@@ -37,7 +37,7 @@ SQL;
             WHERE date(created_at) = :date
             AND payload like :keyword
             GROUP BY type
-SQL;
+        SQL;
 
         return $this->connection->fetchAllKeyValue($sql, [
             'date' => $searchInput->date,
@@ -53,7 +53,7 @@ SQL;
             WHERE date(created_at) = :date
             AND payload like :keyword
             GROUP BY TYPE, EXTRACT(hour from created_at)
-SQL;
+        SQL;
 
         $stats = $this->connection->fetchAll($sql, [
             'date' => $searchInput->date,
@@ -76,7 +76,7 @@ SQL;
             FROM event
             WHERE date(created_at) = :date
             AND payload like :keyword
-SQL;
+        SQL;
 
         $result = $this->connection->fetchAllAssociative($sql, [
             'date' => $searchInput->date,

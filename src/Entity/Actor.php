@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+
 /**
  * @ORM\Entity()
  * @ORM\Table(name="actor")
@@ -62,6 +63,14 @@ class Actor
         return $this->avatarUrl;
     }
 
+    /**
+     * Creates an Actor instance from an associative array.
+     *
+     * Expects an array with keys: 'id', 'login', 'url', and 'avatar_url'.
+     *
+     * @param array $data Associative array of actor data.
+     * @return self
+     */
     public static function fromArray(array $data): self
     {
         return new self(
@@ -71,5 +80,4 @@ class Actor
             $data['avatar_url']
         );
     }
-
 }

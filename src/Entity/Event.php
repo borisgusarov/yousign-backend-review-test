@@ -109,4 +109,10 @@ class Event
     {
         return $this->comment;
     }
+
+    public function setComment(?string $comment): self
+    {
+        $this->comment = $comment;
+        return $this;
+    }
 }
