@@ -209,15 +209,7 @@ class ImportGitHubEventsCommand extends Command
                         $type = $event['type'];
                         $createdAt = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i:s\Z', $event['created_at']);
                         $comment = null;
-                        $uniqueEvents[$eventId] = new Event(
-                            id: $eventId,
-                            type: $eventTypeMap[$type],
-                            actor: $uniqueActors[$actorId],
-                            repo: $uniqueRepos[$repoId],
-                            payload: $event['payload'],
-                            createdAt: $createdAt,
-                            comment: $comment
-                        );
+                        $uniqueEvents[$eventId] = $event;
                     }
                 }
             }
@@ -233,18 +225,18 @@ class ImportGitHubEventsCommand extends Command
         $output->writeln("Repos inserted.");
 
         $output->writeln("Found " . count($uniqueEvents) . " unique events.");
-        $this->writeEventRepository->upsertMany(array_values($uniqueEvents));
+        // $this->writeEventRepository->upsertMany(array_values($uniqueEvents));
 
-        // if (count($uniqueEvents) > 0) {
-        //     $newEvents = [];
-        //     foreach ($uniqueEvents as $event) {
-        //         $entity = $this->mapEventToEntityWithReferences($event);
-        //         if ($entity) {
-        //             $newEvents[] = $entity;
-        //         }
-        //     }
-        //     $this->writeEventRepository->upsertMany($newEvents);
-        // }
+        if (count($uniqueEvents) > 0) {
+            $newEvents = [];
+            foreach ($uniqueEvents as $event) {
+                $entity = $this->mapEventToEntityWithReferences($event);
+                if ($entity) {
+                    $newEvents[] = $entity;
+                }
+            }
+            $this->writeEventRepository->upsertMany($newEvents);
+        }
         $output->writeln("Events inserted.");
 
         return $imported;
